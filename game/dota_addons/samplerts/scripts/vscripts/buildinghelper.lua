@@ -9,6 +9,7 @@ GRID_ALPHA = 30 -- Defines the transparency of the ghost squares (Panorama)
 MODEL_ALPHA = 100 -- Defines the transparency of both the ghost model (Panorama) and Building Placed (Lua)
 RECOLOR_GHOST_MODEL = false -- Whether to recolor the ghost model green/red or not
 RECOLOR_BUILDING_PLACED = true -- Whether to recolor the queue of buildings placed (Lua)
+NO_PATHBLOCKING = true
 
 if not BuildingHelper then
     BuildingHelper = class({})
@@ -320,6 +321,7 @@ function BuildingHelper:PlaceBuilding(player, name, location, blockGridNav, size
     local gridNavBlockers
     if blockGridNav then
         gridNavBlockers = BuildingHelper:BlockGridNavSquare(size, location)
+
     end
 
     -- Spawn the building
@@ -386,6 +388,36 @@ function BuildingHelper:StartBuilding( keys )
         work.refund = true
         callbacks.onConstructionCancelled(work)
         return
+    end
+
+    --TODO Mazecheck
+    if NO_PATHBLOCKING then
+        --place gridnav
+        local gridNavBlockers = BuildingHelper:BlockGridNavSquare(size, location)
+        --check for GridNav:CanFindPath(left, right) and GridNav:CanFindPath(up, down)
+        -- last using the last and first element in gridNavBlockers I can get Vectors to check
+        local vUpLeft = gridNavBlockers[1]
+        local vDownRight = gridNavBlockers[#gridNavBlockers]
+        local vMiddleY = vDownRight.y+(vUpleft.y-vDownRight.y)/2
+        local vMiddleX = vUpleft.x+(vDownRight.x-vUpLeft.x)/2
+        local vZ = vUpLeft.z
+        local vLeft = Vector(vUpLeft.x-32, vMiddleY, vZ)
+        local vRight = Vector(vDownRight.x+32,vMiddleY, vZ) 
+        local vUp = Vector(vMiddleX, vUpLeft.y+32, vZ)
+        local vDown = Vector(vMiddleX, vDownRight.y-32, vZ)
+
+        local check = (not GridNav:CanFindPath(vLeft, vRight) and not GridNav:CanFindPath(vDown, vUp))
+
+        for k, v in pairs(gridNavBlockers) do
+            DoEntFireByInstanceHandle(v, "Disable", "1", 0, nil, nil)
+            DoEntFireByInstanceHandle(v, "Kill", "1", 1, nil, nil)
+        end
+        
+        if check then
+            DebugPrint("[BH] BLOCKS PATH!!!")
+        end
+
+
     end
 
     DebugPrint("[BH] Initializing Building Entity: "..unitName.." at "..VectorString(location))

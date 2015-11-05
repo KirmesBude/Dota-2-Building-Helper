@@ -150,6 +150,7 @@ function Build( event )
 
 		-- Give the unit their original attack capability
 		unit:SetAttackCapability(unit.original_attack)
+		unit:Stop()
 
 		-- Let the building cast abilities
 		unit:RemoveModifierByName("modifier_construction")

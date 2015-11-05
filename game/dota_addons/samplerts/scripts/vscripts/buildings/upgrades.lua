@@ -67,6 +67,11 @@ function StartUpgrade( event )
 	local modifier_name = event.ModifierName
 	local abilities = {}
 
+	-- Units can't attack while building
+	caster.original_attack = caster:GetAttackCapability()
+	caster:SetAttackCapability(DOTA_UNIT_CAP_NO_ATTACK)
+	caster:Stop()
+
 	-- Check to not disable when the queue was full
 	if #caster.queue < 5 then
 
@@ -111,6 +116,9 @@ function CancelUpgrade( event )
 	local caster = event.caster
 	local abilities = caster.disabled_abilities
 
+	-- Give the unit their original attack capability
+	caster:SetAttackCapability(unit.original_attack)
+	
 	for k,ability in pairs(abilities) do
 		ability:SetHidden(false)		
 	end
